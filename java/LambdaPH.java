@@ -7,7 +7,7 @@ import clojure.lang.ITransientMap;
 
 public class LambdaPH extends PH {
   private final Predicate lambda;
-  public LambdaPH(Object n, Predicate l, Route next) {
+  public LambdaPH(Object n, Predicate l, IRoute next) {
     super(n,next);
     if (null == l)
       throw new IllegalArgumentException("lambda must not be nil");
@@ -17,6 +17,6 @@ public class LambdaPH extends PH {
     String piece = (String) pieces.nth(0, null);
     if (piece == null) return null;
     Object ret = lambda.test(piece);
-    return (ret != null) ? forward(pieces,places) : null;
+    return (ret != null) ? forward(piece, pieces,places) : null;
   }
 }

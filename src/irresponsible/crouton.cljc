@@ -29,16 +29,16 @@
 
 ;; (parse-path "///foo///bar///baz-123")
 
-(defrecord Placeholder [name validator])
+(defrecord Place [name validator])
 
 (defn placeholder? [p]
-  (instance? Placeholder p))
+  (instance? Place p))
 
 (defn ?
   ([name]
    (? name nil))
   ([name validator]
-   (->Placeholder name validator)))
+   (->Place name validator)))
 
 ;; (defn ?-tag
 ;;   ([v]

@@ -5,6 +5,7 @@
   :source-paths #{"src" "java"}
   :dependencies '[[org.clojure/clojure "1.9.0-alpha15" :scope "provided"]
                   [criterium                  "0.4.4"  :scope "test"]
+                  [irresponsible/gadget       "0.2.0"  :scope "test"]
                   [adzerk/boot-test           "1.1.0"  :scope "test"]])
 
 (require '[adzerk.boot-test :as t])
