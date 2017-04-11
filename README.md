@@ -46,23 +46,30 @@ Other libraries check some of these points, but not all:
 ;; Internally, we first split the url path into segments (the bits between the slashes)
 ;; We then match segment by segment, backtracking if necessary until a route matches
 
-
-;; * Strings match themselves against a path segment ("bit between slashes")
-;; * A placeholder (`c/?`) is used to match a url segment and assign it a name
-;;   * It may have an optional validator (regex, function or predefined (keyword))
-;; * A slurp (`c/*`) will always succeed and will store any remaining segments
-;; * A map is used to indicate a choice between options. The order is this:
-;;   * :crouton/end if present indicates this route should match if there are no more url segments
-;;   * Strings, looked up in a map
-;;   * Placeholders, first ones with validators, then ones without validators
-;;   * Finally, Slurps, which always succeed
-;; * Anything else will be interpreted
+;; valid urls:
+;;  * /
+;;  * /users/irresponsible/123 ;; or various others of this form
+;;  * /login
+;;  * /logout
+;;  * /admin ;; also scoops up its argument
 (def routes
-  {:crouton/end :home ;; "/"
-   "users" {(c/? :name) {(c/? :id :crouton/int) :user-profile}}
-   "login" :login
+  {:/       :home
+   "users"  {(c/? :name) {(c/? :id :crouton/int) :user-profile}}
+   "login"  :login
    "logout" :logout
-   "admin" (c/* :admin)}) ;; Our hypothetical admin panel does its own thing
+   "admin"  {:& :admin)}) ;; Our hypothetical admin panel does its own thing, we scoop the segments
+
+;; The main structure here is the map. A map requests to match one or more alternative routes
+;; The values of a map are either more maps (and thus matches) for the rest of the segments
+;; or a name for the route. You may pick anything other than a map for a name, though we
+;; recommend a keyword for simplicity.
+;; Different keys in maps mean different things and are processed in this order:
+;;   * `:/`, when present indicates this route should match if there are no more url segments
+;;   * Strings match themselves against a path segment
+;;   * A placeholder (`c/?`) is used to match a url segment and assign it a name
+;;     * It may have an optional validator (regex, function or predefined (keyword))
+;;     * For performance, we test placeholders with conditions first
+;;   * A slurp (`:&`) will always succeed and will store any remaining segments.
 
 ;; compile it to make it fast
 (def route-fn (c/compile-route routes)) ; => function
@@ -75,7 +82,7 @@ Other libraries check some of these points, but not all:
 
 ## Example 2 : Loading strings
 
-Some people prefer to see their urls as a list. We support that as well!
+Some people prefer to see their urls as a list of strings. We support that as well!
 
 ```clojure
 (ns crouton.test
@@ -90,10 +97,11 @@ Some people prefer to see their urls as a list. We support that as well!
 
 ;; Now we need to turn this into the clojure data we had in the last example
 (def routes (c/parse-routes routes-list))
-;; => {"users"  {(c/? :name) {(c/? :id :crouton/int) :user-profile}}
+;; => {:/       :home
+;;     "users"  {(c/? :name) {(c/? :id :crouton/int) :user-profile}}
 ;;     "login"  :login
 ;;     "logout" :logout"
-;;     "admin"  (c/* :admin)}
+;;     "admin"  {:& :admin}}
 
 ;; compile it to make it fast
 (def route-fn (c/compile-route routes)) ; => function
@@ -102,11 +110,14 @@ Some people prefer to see their urls as a list. We support that as well!
 (route-fn path) ; => {:crouton/route :user-profile :name "irresponsible" :id 123}
 ```
 
+## Bidirectional Routing
+
+
 ## Internals
 
 The `Crouton` class is all you need to drive us from Java.
 
-There are parallel clojurescript implementations
+There are parallel clojurescript implementations. They should be fast, but not *as* fast.
 
 ## Copyright and License
 

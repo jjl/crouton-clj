@@ -1,6 +1,7 @@
 (ns irresponsible.crouton
+#?(:cljs (:require [clojure.string :as str]))
 #?(:clj (:import [java.util.regex Pattern]
-                 [irresponsible.crouton Crouton]))
+                 [irresponsible.crouton Crouton IRoute]))
   (:refer-clojure :exclude [*]))
 
 (defrecord Place [name validator])
@@ -11,17 +12,7 @@
    (Crouton/parse_path path))
  :cljs
  (defn parse-path [path]
-   (binding [*unchecked-math* true]
-     (let [end (.length path)]
-       (loop [acc (transient [])
-              start 0]
-         (if (>= start end)
-           (persistent! acc)
-           (let [i (.indexOf path 47 start)
-                 new-start (inc i)]
-             (cond (= -1 i) (->> (.substring path start) (conj! acc) persistent!)
-                   (= start i) (recur acc new-start)
-                   :else (recur (conj! acc (.substring path start i)) new-start)))))))))
+   (into [] (filter #(not= "" %) (str/split path #"/+")))))
 
 (defn place? [p]
   (instance? Place p))
@@ -35,174 +26,218 @@
 #?
 (:cljs
  (defprotocol IRoute
-   (route [self pieces places])))
+   (match [self pieces places])))
+
+(defn iroute? [v]
+  #?(:clj  (instance? IRoute v)
+     :cljs (satisfies? IRoute v)))
 
 #?
 (:cljs
  (defrecord Placeholder [name next]
    IRoute
-   (route [self pieces places]
+   (match [self pieces places]
      (when (seq pieces)
-       (next (subvec pieces 1) (assoc! places name (nth pieces 0)))))))
+       (match next (subvec pieces 1) (assoc! places name (nth pieces 0)))))))
+
+(defn make-placeholder [name next]
+  #?(:clj
+     (Crouton/placeholder name next)
+     :cljs
+     (do (when (nil? name)
+           (throw (ex-info "placeholder expects a non-nil name (keyword recommended)" {:got name})))
+         (when-not (iroute? next)
+           (throw (ex-info "placeholder expects an IRoute next" {:got next})))
+         (->Placeholder name next))))
+ 
+(defn regex? [r]
+  (instance? #?(:clj Pattern :cljs js/RegExp) r))
+
 #?
 (:cljs
  (defrecord RegexPH [name regex next]
    IRoute
-   (route [self pieces places]
+   (match [self pieces places]
      (when (seq pieces)
        (let [f (nth pieces 0)]
          (when (.test regex f)
-           (next (subvec pieces 1) (assoc! places name f))))))))
+           (match next (subvec pieces 1) (assoc! places name f))))))))
+
+(defn make-regex [name regex next]
+  #?(:clj
+     (Crouton/regex name regex next)
+     :cljs
+     (do (when (nil? name)
+           (throw (ex-info "regex expects a non-nil name (keyword recommended)" {:got name})))
+         (when-not (regex? regex)
+           (throw (ex-info "regex expects a RegExp" {:got regex})))
+         (when-not (iroute? next)
+           (throw (ex-info "regex expects an IRoute next" {:got next})))
+         (->RegexPH name regex next))))
+
 #?
 (:cljs
  (defrecord ClojurePH [name ifn next]
    IRoute
-   (route [self pieces places]
+   (match [self pieces places]
      (when (seq pieces)
        (let [f (nth pieces 0)]
-         (when (.test regex f)
-           (next (subvec pieces 1) (assoc! places name f))))))))
+         (when (ifn f)
+           (match next (subvec pieces 1) (assoc! places name f))))))))
+
+(defn make-clojure [name ifn next]
+  #?(:clj
+     (Crouton/clojure name ifn next)
+     :cljs
+     (do (when (nil? name)
+           (throw (ex-info "clojure expects a non-nil name (keyword recommended)" {:got name})))
+         (when-not (ifn? ifn)
+           (throw (ex-info "clojure expects an IFn" {:got ifn})))
+         (when-not (iroute? next)
+           (throw (ex-info "clojure expects an IRoute next" {:got next})))
+         (->ClojurePH name ifn next))))
+
 #?
 (:cljs
  (defrecord Endpoint [name]
    IRoute
-   (route [self pieces places]
+   (match [self pieces places]
      (when (empty? pieces)
        (-> places
            (assoc! :crouton/route name)
            persistent!)))))
+
+(defn make-endpoint [name]
+  #?(:clj
+     (Crouton/endpoint name)
+     :cljs
+     (do (when (nil? name)
+           (throw (ex-info "endpoint expects a non-nil name (keyword recommended)" {:got name})))
+         (->Endpoint name))))
+
 #?
 (:cljs
  (defrecord Fallback [f s]
    IRoute
-   (route [self pieces places]
-     (let [r1 (f pieces places)]
+   (match [self pieces places]
+     (let [r1 (match f pieces places)]
        (if (nil? r1)
-         (s pieces places)
+         (match s pieces places)
          r1)))))
+
+(defn make-fallback [fst snd]
+  #?(:clj
+     (Crouton/fallback fst snd)
+     :cljs
+     (do (when-not (and (iroute? fst) (iroute? snd))
+           (throw (ex-info "fallback expects two IRoute arguments" {:got [fst snd]})))
+         (->Fallback fst snd))))
+
 #?
 (:cljs
  (defrecord Choice [items]
    IRoute
-   (route [self pieces places]
-     (when (seq pieces)
-       (let [f (nth pieces 0)]
-         (loop [items items]
-           (when (seq items)
-             (let [i (nth items 0)
-                   r (i f)]
+   (match [self pieces places]
+     (loop [items items]
+       (when (seq items)
+         (let [i (nth items 0)
+               r (match i pieces places)]
                (if (nil? r)
-                 (recur (subvec pieces 0))
-                 r)))))))))
+                 (recur (subvec items 1))
+                 r)))))))
+
+(defn make-choice [items]
+  #?(:clj
+     (Crouton/choice items)
+     :cljs
+     (do (when-not (and (seq items) (every? iroute? items))
+           (throw (ex-info "choice expects a non-empty sequence of IRoute items" {:got items})))
+         (->Choice (vec items)))))
+
 #?
 (:cljs
  (defrecord Slurp [name]
    IRoute
-   (route [self pieces places]
+   (match [self pieces places]
      (-> places
          (assoc! :crouton/route name)
          (assoc! :crouton/slurp pieces)
          persistent!))))
 
-(defn compile-map [m])
+(defn make-slurp [name]
+  #?(:clj
+     (Crouton/slurp name)
+     :cljs
+     (do (when (nil? name)
+           (throw (ex-info "slurp expects a non-nil name (keyword recommended)" {:got name})))
+         (->Slurp name))))
 
-;; (defn compile-a [a]
-;;   (cond (map? a) (compile-map a)
-;;         (place? a) (compile-place a)
-        
-        
- ;; (defn compile-strings
-;;   "Builds a lookup map of strings to functions and returns code that runs against it
-;;    args: [all-name one-name acc-name strings]
-;;    returns: code"
-;;   [all-name one-name acc-name ss]
-;;   (when (seq ss)
-;;     (let [lookup (into {}
-;;                        (map (fn [[k v]]
-;;                               (->> (compile-a all-name one-name acc-name v)
-;;                                    (apply make-fn all-name one-name acc-name)
-;;                                    (vector k))))
-;;                        ss)]
-;;       `(when-let [h (~lookup ~one-name)] (h ~all-name ~acc-name)))))
+#?
+(:cljs
+ (defrecord RouteMap [routes]
+   IRoute
+   (match [self pieces places]
+     (when (seq pieces)
+       (let [f (nth pieces 0)]
+         (when-let [r (routes f)]
+           (match r (subvec pieces 1) places)))))))
 
-;; (defn compile-vecs
-;;   "Builds code that tries a resorted list of vectors.
-;;    A vector holds a prefix or suffix string and a placeholder
-;;    We sort by the presence of a validator function in the placeholder and then by string length
-;;    args: [all-name one-name vs]
-;;    returns: code"
-;;   [all-name one-name acc-name vs]
-;;   (when (seq vs)
-;;     (map (fn [[k v]] ;
-;;            (->> (sort-by (juxt (comp nil? :validator second) (comp count first)) v)
-;;                 (map #(compile-vec all-name one-name acc-name %))
-;;                 (apply make-fn ps-name)
-;;                 (vector k))))
-  
-;; (defn key-type-of [k]
-;;   (cond
-;;     (placeholder? k) :ph
-;;     (vector? k)      :vec
-;;     (string? k)      :str
-;;     :else
-;;     (throw (ex-info "Don't know what to do with this" {:got k :type (type k)}))))
+(defn make-routemap [items]
+  #?(:clj
+     (Crouton/routemap items)
+     :cljs
+     (do (when-not (and (map? items)
+                        (seq items)
+                        (every? (fn [[k v]] (and (string? k) (iroute? v))) items))
+           (throw (ex-info "routemap expects a non-empty map of String keys and IRoute values" {:got items})))
+         (->RouteMap items))))
 
-;; (defn compile-placeholder [all-name one-name acc-name {:keys [name validator]} next]
-;;   (let [n (compile-a all-name one-name acc-name next)]
-;;     (if validator
-;;       `(when (~validator ~one-name)
-;;          (~next (drop-piece ~all-name) ~acc-name
-       
+(declare compile-route)
 
-;; (defn compile-placeholders [all-name one-name ps]
-;;   (some->> ps
-;;            (#(sort-by (comp nil? :validator) %))
-;;            (map #(compile-placeholder all-name one-name %))
-;;            (apply make-fn all-name one-name)
-;;            (vector k)))
+(defn key-type [k]
+  (cond
+    (#{:/ :&} k) k
+    (place? k) :ph
+    (string? k)      :str
+    :else
+    (throw (ex-info "Don't know what to do with this" {:got k :type (type k)}))))
 
-;; (defn compile-map [all-name one-name m]
-;;   (let [{:keys [ph vec str]} (group-by key-type-of m)
-;;         sp (compile-strings all-name one-name str)
-;;         vp (compile-vecs all-name one-name vec)
-;;         pp (compile-placeholders all-name one-name ph)]
-;;     (->> (concat sp vp pp)
-;;          (apply make-fn all-name one-name))))
+(defn group-keys [m]
+  (group-by (comp key-type first) m))
 
-;; (defn compile-vec [^String all-name ^String one-name v])
-;;   ;; (match v
-;;   ;;   [(s :guard string?) (p :guard placeholder?)]
-;;   ;;   `(and (str/starts-with? ~one-name ~s)
-;;   ;;         (let [~one-name (subs ~one-name ~(count s))]
-;;   ;;           ~(compile-a all-name one-name p)))
-;;   ;;   [(p :guard placeholder?) (s :guard string?)]
-;;   ;;   `(and (str/ends-with? ~one-name ~s)
-;;   ;;         (let [~one-name (subs ~one-name 0 ~(count s))]
-;;   ;;           ~(compile-a all-name one-name p)))))
+(defn compile-strings [ss]
+  (->> ss
+       (into {} (map (fn [[k v]] [k (compile-route v)])))
+       make-routemap))
 
-;; (defn type-of [v]
-;;   (cond (map? v) :map
-;;         (vector? v) :vector
-;;         :else (type v)))
+(defn make-precanned [name validator next]
+  (ex-info "todo" {}))
 
-;; (defmulti compile-a (fn [_ _ t] (type-of t)))
+(defn compile-place [{:keys [name validator]} next]
+  (cond (nil? validator)     (make-placeholder name next)
+        (regex? validator)   (make-regex name validator next)
+        (keyword? validator) (make-precanned name validator next)
+        (ifn? validator)     (make-clojure name validator next)
+        :else (throw (ex-info "don't know what to do with this validator" {:got validator :name name}))))
 
-;; (defmethod compile-a :map
-;;   [all-name one-name m]
-;;   (compile-map all-name one-name m))
+(defn compile-places [ps]
+  (when (seq ps)
+    (->> ps
+         (sort-by (comp nil? :validator first))
+         (map (fn [[k v]] (compile-place k (compile-route v)))))))
 
-;; (defmethod compile-a :vector
-;;   [all-name one-name v]
-;;   (compile-vec all-name one-name v))
+(defn compile-map [m]
+  (let [{slash :/ slurp :& :keys [ph str]} (group-by key-type m)
+        a (when slash [(make-endpoint slash)])
+        b (compile-strings str)
+        c (compile-places ph)
+        d (when slurp [(make-slurp slurp)])
+        routes (concat a b c d)]
+    (->> (into [] routes)
+         #?(:clj Crouton/choice :cljs ->Choice))))
 
-;; (defmethod compile-a String
-;;   [all-name one-name v]
-  
-  
-;; (defmethod compile-a :default ;; it's a value, we're done
-;;   [_ _ v]
-;;   v)
-
-;; (defmacro compile [f]
-;;   (compile-a `crouton-all# `crouton-one# f))
+(defn compile-route [v]
+  (if (map? v)
+    (compile-map v)
+    (make-endpoint v)))
 
