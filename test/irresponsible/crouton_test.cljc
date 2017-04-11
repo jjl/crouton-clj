@@ -1,8 +1,9 @@
-(ns irresponsible.crouton.pathparser-test
-  (:require [clojure.test :refer [testing is deftest]])
-  (:import [irresponsible.crouton PathParser]))
+(ns irresponsible.crouton-test
+  (:require [irresponsible.crouton :as c]
+   #?(:clj  [clojure.test :refer [deftest testing is]]
+      :cljs [cljs.test :refer-macros [deftest testing is]])))
 
-(deftest pathparser-test
+(deftest parse-path-test
   (doseq [[in out] [["/" []]
                     [""  []]
                     ["foo"   ["foo"]]
@@ -20,4 +21,5 @@
                     ["//////foo///////bar///////baz-123///////" ["foo" "bar" "baz-123"]]
                     ]]
     (testing [in out]
-      (is (= out (.parse PathParser/INSTANCE in))))))
+      (is (= out (c/parse-path in))))))
+

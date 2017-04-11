@@ -4,11 +4,10 @@ import clojure.lang.IPersistentVector;
 import clojure.lang.PersistentArrayMap;
 import clojure.lang.ITransientMap;
 import clojure.lang.Keyword;
-import java.lang.IllegalArgumentException;
 
 public class Slurp extends AEndpoint {
-  private final Object route = Wrapjure.CLOJURE.keyword.invoke("crouton","route");
-  private final Object slurp = Wrapjure.CLOJURE.keyword.invoke("crouton","slurp");
+  private final Object route = Keyword.intern("crouton","route");
+  private final Object slurp = Keyword.intern("crouton","slurp");
   private final Object val;
 
   public Slurp(Object v) {

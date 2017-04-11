@@ -5,7 +5,12 @@ import clojure.lang.IPersistentVector;
 import clojure.lang.ITransientMap;
 import java.util.regex.Pattern;
 import java.util.Map;
+import java.util.List;
 
+/**
+ * The Crouton class has *everything* you need to use Crouton effectively
+ * Most of the methods are factories for constructing instances of IRoute
+ */
 public class Crouton {
   /**
    * Factory function for an Endpoint.
@@ -104,5 +109,25 @@ public class Crouton {
    */
   public static Fallback fallback(IRoute first, IRoute second) {
     return new Fallback(first,second);
+  }
+  /**
+   * Factory function for a Choice
+   * A choice will attempt to match a list of items in order
+   * There must be at least one item in the list
+   * @param IRoute first - the route to match first
+   * @param IRoute second - the route to match otherwise
+   * @return Fallback
+   */
+  public static Choice choice(List<IRoute> list) {
+    return new Choice(list);
+  }
+
+  /**
+   * Returns a clojure persistent vector of path segments
+   * @param String path
+   * @return Object (actually PersistentVector, but Clojure...)
+   */
+  public static Object parse_path(String path) {
+    return PathParser.INSTANCE.parse(path);
   }
 }

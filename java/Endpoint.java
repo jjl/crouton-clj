@@ -4,10 +4,9 @@ import clojure.lang.IPersistentVector;
 import clojure.lang.PersistentArrayMap;
 import clojure.lang.ITransientMap;
 import clojure.lang.Keyword;
-import java.lang.IllegalArgumentException;
 
 public class Endpoint extends AEndpoint {
-  private final Object ret = Wrapjure.CLOJURE.keyword.invoke("crouton","route");
+  private final Object ret = Keyword.intern("crouton","route");
   private final Object val;
 
   public Endpoint(Object v) {

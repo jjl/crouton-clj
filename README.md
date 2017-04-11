@@ -4,12 +4,14 @@ The irresponsible clojure guild presents...
 
 A high performance URL router for the 90% case
 
-## Oh lord, why another url router?
+## Why?
 
-1. Decomplected
+Other libraries check some of these points, but not all:
 
-* HTTP specifies that a URL defines an endpoint, not a URL and a method.
-* The method should be handled at the endpoint with something like [yada](https://github.com/juxt/yada/).
+1. Simplicity
+
+* Does one thing, well (path routing)
+* Works well in conjunction with something like [yada](https://github.com/juxt/yada/).
 
 2. Routes as data
 
@@ -20,14 +22,10 @@ A high performance URL router for the 90% case
 
 * No more broken internal links. Come on libraries who can't, it's 2017...
 
-4. Simplicity
-
-* Even if a library gets this far, it's inevitably too complicated
-* We have adopted a simple model that should be flexible enough for 99% of cases
-
 5. Performance
 
-* Metrics-driven optimisation: this thing is fast!
+* Suitable for use under strict response SLAs. This thing is lightning fast!
+* Routes are compiled to an optimised form (hand-tuned java if you're on the JVM!)
 
 6. Reliability
 
@@ -38,38 +36,73 @@ A high performance URL router for the 90% case
 
 * Including self-hosted cljs support (e.g. lumo, planck)
 
-## Introduction
+## Example 1 Routing from clojure data
 
 ```
 (ns crouton.test
   (:require [irresponsible.crouton :as c]))
 
-;; take this typical url path:
-(def path "/foo/bar/123")
-;; it matches this route string (and potentially others)
-(def route-str "/foo/:section/:id")
-;; and we want to make sure id is an integer
-(def route-preds {:id :crouton/int})
-;; and here is a name for the route
-(def route-name :generic-entry)
-
-;; firstly, let's parse it out into a clojure data structure
-;; (you may optionally create the data structures directly instead)
-(def route-1 (c/parse-route route-name route-str route-preds))
-;; => {"foo" {(? :section) {(? :int :crouton/int)}}}
-;; `?` is a function in the irresponsible.crouton namespace which returns a placeholder
+;; Our route is ordinary clojure data. Each has a name, which we recommend be a keyword.
+;; Internally, we first split the url path into segments (the bits between the slashes)
+;; We then match segment by segment, backtracking if necessary until a route matches
+;; Here are the matching rules:
+;; * Strings match themselves against a path segment ("bit between slashes")
+;; * A placeholder (`c/?`) is used to match a url segment and assign it a name
+;;   * It may have an optional validator (regex, function or predefined (keyword))
+;; * A slurp (`c/*`) will always succeed and will store any remaining segments
+;; * A map is used to indicate a choice between options. The order is this:
+;;   * :crouton/end if present indicates this route should match if there are no more url segments
+;;   * Strings, looked up in a map
+;;   * Placeholders, first ones with validators, then ones without validators
+;;   * Finally, Slurps, which always succeed
+(def routes
+  {"users" {(c/? :name) {(c/? :id :crouton/int) :user-profile}}
+   "login" :login
+   "logout" :logout"
+   "admin" (c/* :admin)}) ;; Our hypothetical admin panel does its own thing
 
 ;; compile it to make it fast
-(def fn-1 (c/compile-route route-1)) ; => function
-(fn-1 path) ; => {:crouton/route :generic-entry :section "bar" :id 123}
+(def route-fn (c/compile-route routes)) ; => function
+;; Test it out!
+(def path "/user/irresponsible/123")
+(route-fn path) ; => {:crouton/route :user-profile :name "irresponsible" :id 123}
+;; At this point, you probably want to look up :user-profile in a map of functions
+;; or use a multimethod depending on performance requirements
 ```
 
-## Usage
+## Example 2 : Loading strings
 
+Some people prefer to see their urls as a list. We support that as well!
 
+```
+(ns crouton.test
+  (:require [irresponsible.crouton :as c]))
 
+(def routes-list
+  [[:user-profile "/user/:name/:id" {:id :crouton/int}]
+   [:login        "/login"]
+   [:logout       "/logout"]
+   [:admin        "/admin/*"]]) ;; Our hypothetical admin panel does its own thing
 
-## Java API
+;; Now we need to turn this into the clojure data we had in the last example
+(def routes (c/parse-routes routes-list))
+;; => {"users"  {(c/? :name) {(c/? :id :crouton/int) :user-profile}}
+;;     "login"  :login
+;;     "logout" :logout"
+;;     "admin"  (c/* :admin)}
+
+;; compile it to make it fast
+(def route-fn (c/compile-route routes)) ; => function
+;; Test it out!
+(def path "/user/irresponsible/123")
+(route-fn path) ; => {:crouton/route :user-profile :name "irresponsible" :id 123}
+```
+
+## Internals
+
+The `Crouton` class is all you need to drive us from Java.
+
+There are parallel clojurescript implementations
 
 ## Copyright and License
 

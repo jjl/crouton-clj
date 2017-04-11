@@ -1,4 +1,4 @@
-(ns irresponsible.crouton.java-routing-test
+(ns irresponsible.crouton.java-test
   (:require [clojure.test :refer [testing is deftest]])
   (:import [irresponsible.crouton Crouton Predicate]
            [java.util HashMap]
@@ -128,6 +128,22 @@
       (is (= {:crouton/route ::slurp :bar :baz :crouton/slurp ["test" "again"]}
              (.match f ["test" "again"] (transient {:bar :baz})))))))
 
+(deftest choice-test
+  (let [test (Crouton/endpoint ::test)
+        c (Crouton/choice [test (Crouton/slurp ::slurp)])]
+    (testing "validation"
+      (is (= ::throw
+             (try (Crouton/choice nil)
+                  (catch Exception e ::throw))))
+      (is (= ::throw
+             (try (Crouton/choice [])
+                  (catch Exception e ::throw)))))
+    (testing "success"
+      (is (= {:crouton/route ::test :a :b}
+             (.match c [] (transient {:a :b}))))
+      (is (= {:crouton/route ::slurp :crouton/slurp ["test"] :a :b}
+             (.match c ["test"] (transient {:a :b})))))))
+
 (deftest routemap-test
   (testing "validation"
     (is (= ::throw
@@ -144,3 +160,19 @@
     (testing "failure"
       (is (nil? (.match rm [""] (transient {}))))
       (is (nil? (.match rm ["bar"] (transient {})))))))
+
+;; (deftest integration-test
+;;   (let [
+;;   (let [e1 (Crouton/endpoint ::e1)
+;;         e2 (Crouton/endpoint ::e2)
+;;         s  (Crouton/slurp ::slurp)
+;;         h  (doto (HashMap.)
+;;              (.put "foo" (Crouton/either e1 s))
+;;              (.put "bar" e2))
+;;         rm (Crouton/routemap h)]
+;;     (is (= {:crouton/route ::e1}
+;;            (.route rm ["foo"])))
+;;     (is (= {:crouton/route ::e1}
+;;            (.route rm ["foo"])))
+;;     (is (= {:crouton/route ::e1}
+;;            (.route rm ["foo"])))    

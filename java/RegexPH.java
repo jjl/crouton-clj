@@ -1,7 +1,5 @@
 package irresponsible.crouton;
 
-import clojure.lang.IFn;
-import clojure.java.api.Clojure;
 import java.util.regex.*;
 import clojure.lang.IPersistentVector;
 import clojure.lang.ITransientMap;

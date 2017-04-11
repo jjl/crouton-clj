@@ -1,7 +1,5 @@
 package irresponsible.crouton;
 
-import clojure.lang.IFn;
-import clojure.java.api.Clojure;
 import clojure.lang.IPersistentVector;
 import clojure.lang.ITransientMap;
 
@@ -17,6 +15,6 @@ public class LambdaPH extends PH {
     String piece = (String) pieces.nth(0, null);
     if (piece == null) return null;
     Object ret = lambda.test(piece);
-    return (ret != null) ? forward(piece, pieces,places) : null;
+    return (ret != null) ? forward(piece, pieces, places) : null;
   }
 }
