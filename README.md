@@ -38,7 +38,7 @@ Other libraries check some of these points, but not all:
 
 ## Example 1 Routing from clojure data
 
-```
+```clojure
 (ns crouton.test
   (:require [irresponsible.crouton :as c]))
 
@@ -77,7 +77,7 @@ Other libraries check some of these points, but not all:
 
 Some people prefer to see their urls as a list. We support that as well!
 
-```
+```clojure
 (ns crouton.test
   (:require [irresponsible.crouton :as c]))
 
