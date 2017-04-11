@@ -22,17 +22,17 @@ Other libraries check some of these points, but not all:
 
 * No more broken internal links. Come on libraries who can't, it's 2017...
 
-5. Performance
+4. Performance
 
 * Suitable for use under strict response SLAs. This thing is lightning fast!
 * Routes are compiled to an optimised form (hand-tuned java if you're on the JVM!)
 
-6. Reliability
+5. Reliability
 
 * Liberal in what we accept, conservative in what we produce
 * Handles even pathological inputs gracefully and quickly
 
-7. Clojurescript support
+6. Clojurescript support
 
 * Including self-hosted cljs support (e.g. lumo, planck)
 
@@ -45,7 +45,8 @@ Other libraries check some of these points, but not all:
 ;; Our route is ordinary clojure data. Each has a name, which we recommend be a keyword.
 ;; Internally, we first split the url path into segments (the bits between the slashes)
 ;; We then match segment by segment, backtracking if necessary until a route matches
-;; Here are the matching rules:
+
+
 ;; * Strings match themselves against a path segment ("bit between slashes")
 ;; * A placeholder (`c/?`) is used to match a url segment and assign it a name
 ;;   * It may have an optional validator (regex, function or predefined (keyword))
@@ -55,8 +56,10 @@ Other libraries check some of these points, but not all:
 ;;   * Strings, looked up in a map
 ;;   * Placeholders, first ones with validators, then ones without validators
 ;;   * Finally, Slurps, which always succeed
+;; * Anything else will be interpreted
 (def routes
-  {"users" {(c/? :name) {(c/? :id :crouton/int) :user-profile}}
+  {:crouton/end :home ;; "/"
+   "users" {(c/? :name) {(c/? :id :crouton/int) :user-profile}}
    "login" :login
    "logout" :logout"
    "admin" (c/* :admin)}) ;; Our hypothetical admin panel does its own thing
@@ -79,7 +82,8 @@ Some people prefer to see their urls as a list. We support that as well!
   (:require [irresponsible.crouton :as c]))
 
 (def routes-list
-  [[:user-profile "/user/:name/:id" {:id :crouton/int}]
+  [[:home         "/"]
+   [:user-profile "/user/:name/:id" {:id :crouton/int}]
    [:login        "/login"]
    [:logout       "/logout"]
    [:admin        "/admin/*"]]) ;; Our hypothetical admin panel does its own thing

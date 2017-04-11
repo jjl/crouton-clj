@@ -1,18 +1,14 @@
 (ns irresponsible.crouton
-  #?(:clj (:import [java.util.regex Pattern]
-                   [irresponsible.crouton PathParser]))
-  #?(:clj (:refer-clojure :exclude [compile])))
+#?(:clj (:import [java.util.regex Pattern]
+                 [irresponsible.crouton Crouton]))
+  (:refer-clojure :exclude [*]))
 
-;; a string is a literal piece of url
-;; a routes is compojure-style try in order
-;; a wildcard is 
-
-;; (s/def ::http-method #{:get :post :put :head :delete})
+(defrecord Place [name validator])
 
 #?
 (:clj
  (defn parse-path [^String path]
-   (.parse PathParser/INSTANCE path))
+   (Crouton/parse_path path))
  :cljs
  (defn parse-path [path]
    (binding [*unchecked-math* true]
@@ -27,11 +23,7 @@
                    (= start i) (recur acc new-start)
                    :else (recur (conj! acc (.substring path start i)) new-start)))))))))
 
-;; (parse-path "///foo///bar///baz-123")
-
-(defrecord Place [name validator])
-
-(defn placeholder? [p]
+(defn place? [p]
   (instance? Place p))
 
 (defn ?
@@ -40,26 +32,86 @@
   ([name validator]
    (->Place name validator)))
 
-;; (defn ?-tag
-;;   ([v]
-;;    (cond (vec? v) (? v
-;;   ([name validator]) 
+#?
+(:cljs
+ (defprotocol IRoute
+   (route [self pieces places])))
 
-(defn drop-piece
-  [c]
-  (subvec c 1))
+#?
+(:cljs
+ (defrecord Placeholder [name next]
+   IRoute
+   (route [self pieces places]
+     (when (seq pieces)
+       (next (subvec pieces 1) (assoc! places name (nth pieces 0)))))))
+#?
+(:cljs
+ (defrecord RegexPH [name regex next]
+   IRoute
+   (route [self pieces places]
+     (when (seq pieces)
+       (let [f (nth pieces 0)]
+         (when (.test regex f)
+           (next (subvec pieces 1) (assoc! places name f))))))))
+#?
+(:cljs
+ (defrecord ClojurePH [name ifn next]
+   IRoute
+   (route [self pieces places]
+     (when (seq pieces)
+       (let [f (nth pieces 0)]
+         (when (.test regex f)
+           (next (subvec pieces 1) (assoc! places name f))))))))
+#?
+(:cljs
+ (defrecord Endpoint [name]
+   IRoute
+   (route [self pieces places]
+     (when (empty? pieces)
+       (-> places
+           (assoc! :crouton/route name)
+           persistent!)))))
+#?
+(:cljs
+ (defrecord Fallback [f s]
+   IRoute
+   (route [self pieces places]
+     (let [r1 (f pieces places)]
+       (if (nil? r1)
+         (s pieces places)
+         r1)))))
+#?
+(:cljs
+ (defrecord Choice [items]
+   IRoute
+   (route [self pieces places]
+     (when (seq pieces)
+       (let [f (nth pieces 0)]
+         (loop [items items]
+           (when (seq items)
+             (let [i (nth items 0)
+                   r (i f)]
+               (if (nil? r)
+                 (recur (subvec pieces 0))
+                 r)))))))))
+#?
+(:cljs
+ (defrecord Slurp [name]
+   IRoute
+   (route [self pieces places]
+     (-> places
+         (assoc! :crouton/route name)
+         (assoc! :crouton/slurp pieces)
+         persistent!))))
 
-(defn fst
-  [i]
-  (get i 0))
+(defn compile-map [m])
 
-(defn make-fn
-  [all-name one-name acc-name & exprs]
-  `(fn [~all-name ~acc-name]
-     (let [~one-name (fst ~all-name)] ;; this is the optimum place to put this
-       (or ~@exprs))))
-
-;; (defn compile-strings
+;; (defn compile-a [a]
+;;   (cond (map? a) (compile-map a)
+;;         (place? a) (compile-place a)
+        
+        
+ ;; (defn compile-strings
 ;;   "Builds a lookup map of strings to functions and returns code that runs against it
 ;;    args: [all-name one-name acc-name strings]
 ;;    returns: code"
@@ -153,135 +205,4 @@
 
 ;; (defmacro compile [f]
 ;;   (compile-a `crouton-all# `crouton-one# f))
-
-  
-;; (use 'criterium.core)
-
-;; (with-progress-reporting
-;;   (bench
-;;    (parse-path "/foo/bar/baz-123")
-;;    :verbose))
-
-;; {"admin" {"user" {#? [:id #""] :user}}
-;;  "blogs" {"hello-world" {
-;;                          :end :hello-world}
-;;           :end :blogs-list}
-;;  :crouton/end :home}
-;; (pick "admin" (pick "user" (pick (? :id #"")
-                    
-                
-;;        ""
-;;        ""
-;;        ""
-;;        :crouton/end :home]
-
-;; #routes []
-;; #match  {"login" :auth/login}
-;; #wildcard []
-;; #constrain [{:require-perms #{:admin} :require-method #{:get}}]
-
-;; [""
-;;  "login"
-;;  "logout"
-;;  "find-a-home" (WRAP lemon.auth.auth-region []
-;;                      [""        lemon.routes.front.home
-;;                       (GET  "profile") lemon.routes.front/profile-get
-;;                       (POST "profile") lemon.routes.front/profile-post
-;;                       (GET  "docs")    lemon.routes.front/docs-get
-;;                       (POST "docs")    lemon.routes.front/docs-post])
-;;  "find-a-tenant" [""
-;;                   "profile"
-;;                   "docs"]]
-
-;; (s/def ::string  string?)
-;; (s/def ::keyword keyword?)
-;; (s/def ::symbol  symbol?)
-;; (s/def ::map     (s/map-of ::match any? :gen-max 3))
-;; (s/def ::vector  (s/coll-of ::match :gen-max 3 :kind vector?))
-;; (s/def ::route   (ss/some-spec ::string ::keyword ::symbol ::map ::vector))
-
-;; (defrecord Done [val])
-
-;; (defn done ^Done [v]
-;;   (->Done v))
-
-;; (defprotocol Cursor
-;;   (advance [c])
-;;   (look    [c]))
-
-;; (defrecord ArrayCursor [^int count ^int index storage]
-;;   (advance [c]
-;;     (->ArrayCursor count (unchecked-add index 1) storage))
-;;   (look [c]
-;;     (when (< index count)
-;;       (aget storage index))))
-
-;; (defn new-array-cursor
-;;   ([arr]
-;;    (new-array-cursor arr 0 (alength arr)))
-;;   ([arr index]
-;;    (new-array-cursor arr index (alength arr)))
-;;   ([arr index count]
-;;    (->ArrayCursor count index arr)))
-
-;; (defprotocol MatchStatey
-;;   (with-matches [st m])
-;;   (with-extra   [st e])
-;;   (with-cursor  [st c]))
-
-;; (deftype MatchState [cursor matches extra]
-;;   MatchStatey
-;;   (with-matches [st m] (->MatchState cursor m extra))
-;;   (with-extra   [st e] (->MatchState cursor matches e))
-;;   (with-cursor  [st c] (->MatchState c matches extra)))
-
-;; (defn new-match-state [^String path]
-;;   (-> (new-array-cursor (.split path "/"))
-;;       (->MatchState {} {})))
-
-;; (defmulti build-a (fn [k & _] (type k)))
-
-;; (defmethod build-a Done
-;;   [^Done d ms]
-;;   (.-val d))
-
-;; (defmethod build-a String
-;;   [s ms nxt]
-;;   (let [ms2 (with-meta ms {:tag MatchState})]
-;;     `(let [cur# (.-cursor ~ms2)
-;;            fst# (look cur#)]
-;;        (if (= ~s fst#)
-;;          (build-a
-
-     
-;; (defmethod build-a ::keyword [s] ...)
-;; (defmethod build-a ::symbol [s] ...)
-;; (defmethod build-a ::map [s] ...)
-;; (defmethod build-a ::vector [s] ...)
-
-
-;; (defn build [route]
-;;   (let [st-name (with-meta `st# {:tag MatchState})]
-;;     `(fn [^String path#]
-;;        (let [~st-name  (new-match-state path#)
-;;            ^String first# (peek-piece ~st-name)]
-;;        (when #?(:clj (.isEmpty first#) :cljs (= "" first#))
-;;            (move-cursor ~st-name))
-;;        ~(build-a route st-name)))))
-
-;; (defn make-matcher [route]
-
-;; (defn split [path])
-
-;; (defprotocol Router
-;;   (add-route [self path method])
-;;   (lookup    [self req]))
-
-;; (defrecord Crouton [at]
-;;   (add-route [self path method]
-;;     (let [ps (clojure.string/split path #"/")]
-      
-;;       ))
-;;   (lookup    [self req]
-;;     ))
 
