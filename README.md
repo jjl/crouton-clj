@@ -61,7 +61,7 @@ Other libraries check some of these points, but not all:
   {:crouton/end :home ;; "/"
    "users" {(c/? :name) {(c/? :id :crouton/int) :user-profile}}
    "login" :login
-   "logout" :logout"
+   "logout" :logout
    "admin" (c/* :admin)}) ;; Our hypothetical admin panel does its own thing
 
 ;; compile it to make it fast
