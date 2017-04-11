@@ -33,10 +33,10 @@
            (try (c/make-endpoint nil)
                 (catch #?(:clj Exception :cljs :default) e ::throw)))))
   (testing "success"
-    (is (= {:crouton/route ::test} (#?(:clj .match :cljs c/match) (c/make-endpoint ::test) [] (transient {}))))
-    (is (= {:crouton/route ::test :bar :baz} (#?(:clj .match :cljs c/match) (c/make-endpoint ::test) [] (transient {:bar :baz})))))
+    (is (= {:crouton/route ::test} (c/match (c/make-endpoint ::test) [] (transient {}))))
+    (is (= {:crouton/route ::test :bar :baz} (c/match (c/make-endpoint ::test) [] (transient {:bar :baz})))))
   (testing "failure"
-    (is (nil? (#?(:clj .match :cljs c/match) (c/make-endpoint ::test) ["foo"] (transient {}))))))
+    (is (nil? (c/match (c/make-endpoint ::test) ["foo"] (transient {}))))))
 
 (deftest slurp-test
   (testing "validation"
@@ -45,9 +45,9 @@
                 (catch #?(:clj Exception :cljs :default) e ::throw)))))
   (testing "success"
     (is (= {:crouton/route ::test :crouton/slurp []}
-           (#?(:clj .match :cljs c/match) (c/make-slurp ::test) [] (transient {}))))
+           (c/match (c/make-slurp ::test) [] (transient {}))))
     (is (= {:crouton/route ::test :bar :baz :crouton/slurp ["test"]}
-           (#?(:clj .match :cljs c/match) (c/make-slurp ::test) ["test"] (transient {:bar :baz}))))))
+           (c/match (c/make-slurp ::test) ["test"] (transient {:bar :baz}))))))
 
 (deftest placeholder-test
   (testing "validation"
@@ -59,11 +59,11 @@
                 (catch #?(:clj Exception :cljs :default) e ::throw)))))
   (let [p (c/make-placeholder :foo (c/make-endpoint ::test))]
     (testing :success
-      (is (= {:crouton/route ::test :foo "test"} (#?(:clj .match :cljs c/match) p ["test"] (transient {}))))
-      (is (= {:crouton/route ::test :a :b :foo "test"} (#?(:clj .match :cljs c/match) p ["test"] (transient {:a :b})))))
+      (is (= {:crouton/route ::test :foo "test"} (c/match p ["test"] (transient {}))))
+      (is (= {:crouton/route ::test :a :b :foo "test"} (c/match p ["test"] (transient {:a :b})))))
     (testing :failure
-      (is (nil? (#?(:clj .match :cljs c/match) p ["test" "tist"] (transient {}))))
-      (is (nil? (#?(:clj .match :cljs c/match) p [] (transient {})))))))
+      (is (nil? (c/match p ["test" "tist"] (transient {}))))
+      (is (nil? (c/match p [] (transient {})))))))
 
 (deftest regex-test
   (let [test (c/make-endpoint ::test)]
@@ -79,11 +79,11 @@
                   (catch #?(:clj Exception :cljs :default) e ::throw)))))
     (let [p (c/make-regex :foo #"foo" test)]
       (testing :success
-        (is (= {:crouton/route ::test :foo "foo"} (#?(:clj .match :cljs c/match) p ["foo"] (transient {}))))
-        (is (= {:crouton/route ::test :a :b :foo "foo"} (#?(:clj .match :cljs c/match) p ["foo"] (transient {:a :b})))))
+        (is (= {:crouton/route ::test :foo "foo"} (c/match p ["foo"] (transient {}))))
+        (is (= {:crouton/route ::test :a :b :foo "foo"} (c/match p ["foo"] (transient {:a :b})))))
       (testing :failure
-        (is (nil? (#?(:clj .match :cljs c/match) p ["bar"] (transient {}))))
-        (is (nil? (#?(:clj .match :cljs c/match) p [] (transient {}))))))))
+        (is (nil? (c/match p ["bar"] (transient {}))))
+        (is (nil? (c/match p [] (transient {}))))))))
 
 #?
 (:clj
@@ -107,11 +107,11 @@
                                    s)))
                              test)]
        (testing :success
-         (is (= {:crouton/route ::test :foo "test"} (#?(:clj .match :cljs c/match) p ["test"] (transient {}))))
-         (is (= {:crouton/route ::test :a :b :foo "test"} (#?(:clj .match :cljs c/match) p ["test"] (transient {:a :b})))))
+         (is (= {:crouton/route ::test :foo "test"} (c/match p ["test"] (transient {}))))
+         (is (= {:crouton/route ::test :a :b :foo "test"} (c/match p ["test"] (transient {:a :b})))))
        (testing :failure
-         (is (nil? (#?(:clj .match :cljs c/match) p ["foo"] (transient {}))))
-         (is (nil? (#?(:clj .match :cljs c/match) p [] (transient {})))))))))
+         (is (nil? (c/match p ["foo"] (transient {}))))
+         (is (nil? (c/match p [] (transient {})))))))))
  
 (deftest clojure-test
   (let [test (c/make-endpoint ::test)]
@@ -127,11 +127,11 @@
                   (catch #?(:clj Exception :cljs :default) e ::throw)))))
     (let [p (c/make-clojure :foo #(if (= "foo" %) nil %) test)]
       (testing :success
-        (is (= {:crouton/route ::test :foo "test"} (#?(:clj .match :cljs c/match) p ["test"] (transient {}))))
-        (is (= {:crouton/route ::test :a :b :foo "test"} (#?(:clj .match :cljs c/match) p ["test"] (transient {:a :b})))))
+        (is (= {:crouton/route ::test :foo "test"} (c/match p ["test"] (transient {}))))
+        (is (= {:crouton/route ::test :a :b :foo "test"} (c/match p ["test"] (transient {:a :b})))))
       (testing :failure
-        (is (nil? (#?(:clj .match :cljs c/match) p ["foo"] (transient {}))))
-        (is (nil? (#?(:clj .match :cljs c/match) p [] (transient {}))))))))
+        (is (nil? (c/match p ["foo"] (transient {}))))
+        (is (nil? (c/match p [] (transient {}))))))))
 
 (deftest fallback-test
   (let [test (c/make-endpoint ::test)
@@ -145,13 +145,13 @@
                   (catch #?(:clj Exception :cljs :default) e ::throw)))))
     (testing "success"
       (is (= {:crouton/route ::test}
-             (#?(:clj .match :cljs c/match) f [] (transient {}))))
+             (c/match f [] (transient {}))))
       (is (= {:crouton/route ::test :bar :baz}
-             (#?(:clj .match :cljs c/match) f [] (transient {:bar :baz}))))
+             (c/match f [] (transient {:bar :baz}))))
       (is (= {:crouton/route ::slurp :bar :baz :crouton/slurp ["test"]}
-             (#?(:clj .match :cljs c/match) f ["test"] (transient {:bar :baz}))))
+             (c/match f ["test"] (transient {:bar :baz}))))
       (is (= {:crouton/route ::slurp :bar :baz :crouton/slurp ["test" "again"]}
-             (#?(:clj .match :cljs c/match) f ["test" "again"] (transient {:bar :baz})))))))
+             (c/match f ["test" "again"] (transient {:bar :baz})))))))
 
 (deftest choice-test
   (let [test (c/make-endpoint ::test)
@@ -165,9 +165,9 @@
                   (catch #?(:clj Exception :cljs :default) e ::throw)))))
     (testing "success"
       (is (= {:crouton/route ::test :a :b}
-             (#?(:clj .match :cljs c/match) c [] (transient {:a :b}))))
+             (c/match c [] (transient {:a :b}))))
       (is (= {:crouton/route ::slurp :crouton/slurp ["test"] :a :b}
-             (#?(:clj .match :cljs c/match) c ["test"] (transient {:a :b})))))))
+             (c/match c ["test"] (transient {:a :b})))))))
 
 (deftest routemap-test
   (testing "validation"
@@ -178,12 +178,12 @@
         rm (c/make-routemap m)]
     (testing "success"
       (is (= {:crouton/route ::test}
-             (#?(:clj .match :cljs c/match) rm ["test"] (transient {}))))
+             (c/match rm ["test"] (transient {}))))
       (is (= {:crouton/route ::test :bar :baz}
-             (#?(:clj .match :cljs c/match) rm ["test"] (transient {:bar :baz})))))
+             (c/match rm ["test"] (transient {:bar :baz})))))
     (testing "failure"
-      (is (nil? (#?(:clj .match :cljs c/match) rm [""] (transient {}))))
-      (is (nil? (#?(:clj .match :cljs c/match) rm ["bar"] (transient {})))))))
+      (is (nil? (c/match rm [""] (transient {}))))
+      (is (nil? (c/match rm ["bar"] (transient {})))))))
 
 ;; (deftest integration-test
 ;;   (let [

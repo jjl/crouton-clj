@@ -1,8 +1,9 @@
 (ns irresponsible.crouton
 #?(:cljs (:require [clojure.string :as str]))
 #?(:clj (:import [java.util.regex Pattern]
+                 [clojure.lang ITransientMap IPersistentVector]
                  [irresponsible.crouton Crouton IRoute]))
-  (:refer-clojure :exclude [*]))
+  (:refer-clojure :exclude [* #?(:clj compile)]))
 
 (defrecord Place [name validator])
 
@@ -24,7 +25,10 @@
    (->Place name validator)))
 
 #?
-(:cljs
+(:clj
+ (defn match [^IRoute thing ^IPersistentVector pieces ^ITransientMap places]
+   (.match thing pieces places))
+ :cljs
  (defprotocol IRoute
    (match [self pieces places])))
 
@@ -240,4 +244,13 @@
   (if (map? v)
     (compile-map v)
     (make-endpoint v)))
+
+(defn compile [r]
+  (let [routes (compile-route r)]
+    (fn
+      ([path]
+       (let [p (parse-path path)]
+         (match routes p (transient {}))))
+      ([name params]
+       (throw (ex-info "todo: reverse routing" {}))))))
 

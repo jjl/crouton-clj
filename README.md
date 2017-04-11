@@ -72,7 +72,7 @@ Other libraries check some of these points, but not all:
 ;;   * A slurp (`:&`) will always succeed and will store any remaining segments.
 
 ;; compile it to make it fast
-(def route-fn (c/compile-route routes)) ; => function
+(def route-fn (c/compile routes)) ; => function
 ;; Test it out!
 (def path "/user/irresponsible/123")
 (route-fn path) ; => {:crouton/route :user-profile :name "irresponsible" :id 123}
@@ -104,7 +104,7 @@ Some people prefer to see their urls as a list of strings. We support that as we
 ;;     "admin"  {:& :admin}}
 
 ;; compile it to make it fast
-(def route-fn (c/compile-route routes)) ; => function
+(def route-fn (c/compile routes)) ; => function
 ;; Test it out!
 (def path "/user/irresponsible/123")
 (route-fn path) ; => {:crouton/route :user-profile :name "irresponsible" :id 123}
