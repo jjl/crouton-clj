@@ -1,7 +1,8 @@
 package irresponsible.crouton;
 
 public class Preds {
-  public class PosDecInt {
+  public enum PosInt implements Predicate {
+    INSTANCE;
     public final Object test(String s) {
       try {
 	if (s.startsWith("-")) return null;
@@ -11,7 +12,8 @@ public class Preds {
       }
     }
   }
-  public class PosHexInt {
+  public enum PosHexInt implements Predicate {
+    INSTANCE;
     public final Object test(String s) {
       try {
 	if (s.startsWith("-")) return null;

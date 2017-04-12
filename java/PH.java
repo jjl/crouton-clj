@@ -12,7 +12,7 @@ public abstract class PH extends AInvariant {
       throw new IllegalArgumentException("name must not be nil");
     name = n;
   }
-  final protected Object forward(String val, IPersistentVector pieces, ITransientMap places) {
+  final protected Object forward(Object val, IPersistentVector pieces, ITransientMap places) {
     return next.match(RT.subvec(pieces, 1, pieces.count()),
 		      places.assoc(name, val));
   }

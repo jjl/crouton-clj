@@ -197,14 +197,14 @@
     (is (= {:crouton/route ::e2}
            (c/match rm ["bar"] (transient {}))))
     (let [ex-routes {:/       :home
-                     ;; "users"  {(c/? :name) {(c/? :id :crouton/pos-int) :user-profile}}
+                     "users"  {(c/? :name #"[a-z]+") {(c/? :id :crouton/pos-int) :user-profile}}
                      "login"  :login
                      "admin"  {:& :admin}}
           r-fn (try (c/compile ex-routes)
                     (catch #?(:clj Exception :cljs :default) e
                       (prn :fail e)))]
       (is (= {:crouton/route :home} (r-fn "/")))
-      ;; (is (= {:crouton/route :user-profile :name "irresponsible" :id 123} (r-fn "/users/irresponsible/123")))
+      (is (= {:crouton/route :user-profile :name "irresponsible" :id 123} (r-fn "/users/irresponsible/123")))
       (is (= {:crouton/route :login} (r-fn "/login")))
       (is (= {:crouton/route :admin :crouton/slurp ["foo"]} (r-fn "/admin/foo"))))))
 

@@ -2,7 +2,7 @@
 #?(:cljs (:require [clojure.string :as str]))
 #?(:clj (:import [java.util.regex Pattern]
                  [clojure.lang ITransientMap IPersistentVector]
-                 [irresponsible.crouton Crouton IRoute]))
+                 [irresponsible.crouton Crouton IRoute Preds$PosInt]))
   (:refer-clojure :exclude [* #?(:clj compile)]))
 
 (defrecord Place [name validator])
@@ -67,6 +67,15 @@
          (when (.test regex f)
            (match next (subvec pieces 1) (assoc! places name f))))))))
 
+#?
+(:cljs
+ (defn- anchor-regex [re]
+   (let [source (.-source re)
+         len    (.-length source)
+         prefix (if (and (pos? len) (not= "^" (.charAt source 0))) "^" "")
+         suffix (if (and (pos? len) (not= "$" (.charAt source (dec len)))) "$" "")]
+     (js/RegExp (str prefix source suffix)))))
+
 (defn make-regex [name regex next]
   #?(:clj
      (Crouton/regex name regex next)
@@ -77,7 +86,7 @@
            (throw (ex-info "regex expects a RegExp" {:got regex})))
          (when-not (iroute? next)
            (throw (ex-info "regex expects an IRoute next" {:got next})))
-         (->RegexPH name regex next))))
+         (->RegexPH name (anchor-regex regex) next))))
 
 #?
 (:cljs
@@ -85,9 +94,10 @@
    IRoute
    (match [self pieces places]
      (when (seq pieces)
-       (let [f (nth pieces 0)]
-         (when (ifn f)
-           (match next (subvec pieces 1) (assoc! places name f))))))))
+       (let [f (nth pieces 0)
+             r (ifn f)]
+         (when-not (nil? r)
+           (match next (subvec pieces 1) (assoc! places name r))))))))
 
 (defn make-clojure [name ifn next]
   #?(:clj
@@ -220,8 +230,22 @@
          (into {} (map (fn [[k v]] [k (compile-route v)])))
          make-routemap)))
 
+#?
+(:cljs
+ (defn- parse-pos-int [^String s]
+   (try
+     (when-not (= "-" (.charAt s 0))
+       (js/parseInt s 10))
+     (catch :default e
+       nil))))
+
+(def ^:private validators
+  {:crouton/pos-int #?(:clj Preds$PosInt/INSTANCE :cljs parse-pos-int)})
+
 (defn make-precanned [name validator next]
-  (ex-info "todo: precanned" {}))
+  (if-let [v (validators validator)]
+    (#?(:clj Crouton/lambda :cljs make-clojure) name v next)
+    (throw (ex-info "Unknown precanned validator" {:got validator :valid (set (keys validators))}))))
 
 (defn compile-place [{:keys [name validator]} next]
   (cond (nil? validator)     (make-placeholder name next)
