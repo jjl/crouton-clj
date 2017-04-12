@@ -174,8 +174,7 @@
     (is (= ::throw
            (try (c/make-routemap nil)
                 (catch #?(:clj Exception :cljs :default) e ::throw)))))
-  (let [m {"test" (c/make-endpoint ::test)}
-        rm (c/make-routemap m)]
+  (let [rm (c/make-routemap {"test" (c/make-endpoint ::test)})]
     (testing "success"
       (is (= {:crouton/route ::test}
              (c/match rm ["test"] (transient {}))))
@@ -185,20 +184,27 @@
       (is (nil? (c/match rm [""] (transient {}))))
       (is (nil? (c/match rm ["bar"] (transient {})))))))
 
-;; (deftest integration-test
-;;   (let [
-;;   (let [e1 (c/make-endpoint ::e1)
-;;         e2 (c/make-endpoint ::e2)
-;;         s  (c/make-slurp ::slurp)
-;;         h  (doto (HashMap.)
-;;              (.put "foo" (c/make-either e1 s))
-;;              (.put "bar" e2))
-;;         rm (c/make-routemap h)]
-;;     (is (= {:crouton/route ::e1}
-;;            (.route rm ["foo"])))
-;;     (is (= {:crouton/route ::e1}
-;;            (.route rm ["foo"])))
-;;     (is (= {:crouton/route ::e1}
-;;            (.route rm ["foo"])))    
-
+(deftest integration-test
+  (let [e1 (c/make-endpoint ::e1)
+        e2 (c/make-endpoint ::e2)
+        s  (c/make-slurp ::slurp)
+        rm (c/make-routemap {"foo" (c/make-fallback e1 s)
+                             "bar" e2})]
+    (is (= {:crouton/route ::e1}
+           (c/match rm ["foo"] (transient {}))))
+    (is (= {:crouton/route ::slurp :crouton/slurp ["bar"]}
+           (c/match rm ["foo" "bar"] (transient {}))))
+    (is (= {:crouton/route ::e2}
+           (c/match rm ["bar"] (transient {}))))
+    (let [ex-routes {:/       :home
+                     ;; "users"  {(c/? :name) {(c/? :id :crouton/pos-int) :user-profile}}
+                     "login"  :login
+                     "admin"  {:& :admin}}
+          r-fn (try (c/compile ex-routes)
+                    (catch #?(:clj Exception :cljs :default) e
+                      (prn :fail e)))]
+      (is (= {:crouton/route :home} (r-fn "/")))
+      ;; (is (= {:crouton/route :user-profile :name "irresponsible" :id 123} (r-fn "/users/irresponsible/123")))
+      (is (= {:crouton/route :login} (r-fn "/login")))
+      (is (= {:crouton/route :admin :crouton/slurp ["foo"]} (r-fn "/admin/foo"))))))
 

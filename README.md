@@ -54,10 +54,10 @@ Other libraries check some of these points, but not all:
 ;;  * /admin ;; also scoops up its argument
 (def routes
   {:/       :home
-   "users"  {(c/? :name) {(c/? :id :crouton/int) :user-profile}}
+   "users"  {(c/? :name) {(c/? :id :crouton/pos-int) :user-profile}}
    "login"  :login
    "logout" :logout
-   "admin"  {:& :admin)}) ;; Our hypothetical admin panel does its own thing, we scoop the segments
+   "admin"  {:& :admin}) ;; Our hypothetical admin panel does its own thing, we scoop the segments
 
 ;; The main structure here is the map. A map requests to match one or more alternative routes
 ;; The values of a map are either more maps (and thus matches) for the rest of the segments
@@ -90,7 +90,7 @@ Some people prefer to see their urls as a list of strings. We support that as we
 
 (def routes-list
   [[:home         "/"]
-   [:user-profile "/user/:name/:id" {:id :crouton/int}]
+   [:user-profile "/user/:name/:id" {:id :crouton/pos-nt}]
    [:login        "/login"]
    [:logout       "/logout"]
    [:admin        "/admin/*"]]) ;; Our hypothetical admin panel does its own thing
@@ -98,7 +98,7 @@ Some people prefer to see their urls as a list of strings. We support that as we
 ;; Now we need to turn this into the clojure data we had in the last example
 (def routes (c/parse-routes routes-list))
 ;; => {:/       :home
-;;     "users"  {(c/? :name) {(c/? :id :crouton/int) :user-profile}}
+;;     "users"  {(c/? :name) {(c/? :id :crouton/pos-int) :user-profile}}
 ;;     "login"  :login
 ;;     "logout" :logout"
 ;;     "admin"  {:& :admin}}
@@ -112,12 +112,17 @@ Some people prefer to see their urls as a list of strings. We support that as we
 
 ## Bidirectional Routing
 
+Coming as soon as we're satisfied with forward routing.
+
+The mechanism is the two-arity of compiled routes functions:
+
+Instead of passing a path, you pass a name (probably keyword) and a map of parameters (may be empty)
 
 ## Internals
 
 The `Crouton` class is all you need to drive us from Java.
 
-There are parallel clojurescript implementations. They should be fast, but not *as* fast.
+There are parallel clojurescript implementations. Little time was spent optimising these so far.
 
 ## Copyright and License
 

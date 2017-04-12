@@ -201,21 +201,27 @@
 (defn key-type [k]
   (cond
     (#{:/ :&} k) k
-    (place? k) :ph
-    (string? k)      :str
+    (place? k)  :ph
+    (string? k) :str
     :else
     (throw (ex-info "Don't know what to do with this" {:got k :type (type k)}))))
 
 (defn group-keys [m]
   (group-by (comp key-type first) m))
 
+(group-keys {:/       :home
+             ;; "users"  {(c/? :name) {(c/? :id :crouton/pos-int) :user-profile}}
+             "login"  :login
+             "admin"  {:& :admin}})
+
 (defn compile-strings [ss]
-  (->> ss
-       (into {} (map (fn [[k v]] [k (compile-route v)])))
-       make-routemap))
+  (when (seq ss)
+    (->> ss
+         (into {} (map (fn [[k v]] [k (compile-route v)])))
+         make-routemap)))
 
 (defn make-precanned [name validator next]
-  (ex-info "todo" {}))
+  (ex-info "todo: precanned" {}))
 
 (defn compile-place [{:keys [name validator]} next]
   (cond (nil? validator)     (make-placeholder name next)
@@ -231,14 +237,17 @@
          (map (fn [[k v]] (compile-place k (compile-route v)))))))
 
 (defn compile-map [m]
-  (let [{slash :/ slurp :& :keys [ph str]} (group-by key-type m)
+  (when (empty? m)
+    (throw (ex-info "Cannot compile an empty map!" {})))
+  (let [{slash :/ slurp :&} m
+        {:keys [ph str]} (group-keys m)
         a (when slash [(make-endpoint slash)])
-        b (compile-strings str)
+        b (when str [(compile-strings str)])
         c (compile-places ph)
         d (when slurp [(make-slurp slurp)])
         routes (concat a b c d)]
-    (->> (into [] routes)
-         #?(:clj Crouton/choice :cljs ->Choice))))
+;;    (prn :routes routes)
+    (make-choice (into [] routes))))
 
 (defn compile-route [v]
   (if (map? v)

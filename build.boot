@@ -36,7 +36,7 @@
   (comp (testing) (speak) (test-cljs)))
 
 (deftask test []
-  (comp (testing) (speak) (clj-tests) (cljs-tests)))
+  (comp (testing) (speak) (javac) (t/test) (test-cljs)))
 
 (deftask autotest []
   (comp (testing) (watch) (test)))
