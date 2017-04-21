@@ -2,7 +2,7 @@ package irresponsible.crouton;
 
 import clojure.lang.IPersistentVector;
 import clojure.lang.PersistentArrayMap;
-import clojure.lang.ITransientMap;
+import clojure.lang.IPersistentMap;
 import clojure.lang.Keyword;
 
 public class Slurp extends AEndpoint {
@@ -15,8 +15,8 @@ public class Slurp extends AEndpoint {
       throw new IllegalArgumentException("value must not be nil");
     val = v;
   }
-  public final Object match(IPersistentVector pieces, ITransientMap places) {
+  public final Object match(IPersistentVector pieces, IPersistentMap places) {
     // if (0 == places.count()) return PersistentArrayMap.EMPTY.assoc(ret,val);
-    return places.assoc(route,val).assoc(slurp,pieces).persistent();
+    return places.assoc(route,val).assoc(slurp,pieces);
   }
 }

@@ -1,8 +1,8 @@
 package irresponsible.crouton;
 
 import clojure.lang.IPersistentVector;
-import clojure.lang.ITransientMap;
+import clojure.lang.IPersistentMap;
 
 public interface IRoute {
-  public Object match(IPersistentVector pieces, ITransientMap places);
+  public Object match(IPersistentVector pieces, IPersistentMap places);
 }

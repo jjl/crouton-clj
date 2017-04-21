@@ -1,7 +1,7 @@
 package irresponsible.crouton;
 
 import clojure.lang.IPersistentVector;
-import clojure.lang.ITransientMap;
+import clojure.lang.IPersistentMap;
 
 public class LambdaPH extends PH {
   private final Predicate lambda;
@@ -11,7 +11,7 @@ public class LambdaPH extends PH {
       throw new IllegalArgumentException("lambda must not be nil");
     lambda = l;
   }
-  public final Object match(IPersistentVector pieces, ITransientMap places) {
+  public final Object match(IPersistentVector pieces, IPersistentMap places) {
     String piece = (String) pieces.nth(0, null);
     if (piece == null) return null;
     Object ret = lambda.test(piece);

@@ -1,7 +1,7 @@
 package irresponsible.crouton;
 
 import clojure.lang.IPersistentVector;
-import clojure.lang.ITransientMap;
+import clojure.lang.IPersistentMap;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -15,7 +15,7 @@ public class Choice implements IRoute {
       throw new IllegalArgumentException("choices must contain at least one item");
     routes = new ArrayList<IRoute>(choices);
   }
-  public final Object match(IPersistentVector pieces, ITransientMap places) {
+  public final Object match(IPersistentVector pieces, IPersistentMap places) {
     Object ret = null;
     for(IRoute route : routes) {
       ret = route.match(pieces, places);

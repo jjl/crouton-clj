@@ -1,7 +1,7 @@
 package irresponsible.crouton;
 
 import clojure.lang.IPersistentVector;
-import clojure.lang.ITransientMap;
+import clojure.lang.IPersistentMap;
 
 public class Fallback implements IRoute {
   private final IRoute first;
@@ -12,7 +12,7 @@ public class Fallback implements IRoute {
     first = f;
     second = s;
   }
-  public final Object match(IPersistentVector pieces, ITransientMap places) {
+  public final Object match(IPersistentVector pieces, IPersistentMap places) {
     Object ret = first.match(pieces, places);
     return (ret == null) ? second.match(pieces, places) : ret;
   }

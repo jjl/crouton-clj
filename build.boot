@@ -3,7 +3,9 @@
   :version "0.1.0"
   :resource-paths #{"src"}
   :source-paths #{"src" "java"}
-  :dependencies '[[org.clojure/clojure         "1.9.0-alpha15"  :scope "provided"]
+  :dependencies '[[org.clojure/clojure "1.9.0-alpha15"  :scope "provided"]
+                  [org.clojure/core.match "0.3.0-alpha4"]
+                  [irresponsible/spectra  "0.1.0"]
                   [org.clojure/clojurescript   "1.9.456"        :scope "test"]
                   [adzerk/boot-cljs            "1.7.228-1"      :scope "test"]
                   [criterium                   "0.4.4"          :scope "test"]
@@ -42,7 +44,7 @@
   (comp (testing) (watch) (test)))
 
 (deftask make-jar []
-  (comp (pom) (jar)))
+  (comp (javac) (pom) (jar)))
 
 (deftask travis []
   (testing)

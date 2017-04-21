@@ -2,7 +2,7 @@ package irresponsible.crouton;
 
 import java.util.regex.*;
 import clojure.lang.IPersistentVector;
-import clojure.lang.ITransientMap;
+import clojure.lang.IPersistentMap;
 
 public final class RegexPH extends PH {
   private final Pattern pat;
@@ -12,7 +12,7 @@ public final class RegexPH extends PH {
       throw new IllegalArgumentException("pattern must not be nil");
     pat = p;
   }
-  public final Object match(IPersistentVector pieces, ITransientMap places) {
+  public final Object match(IPersistentVector pieces, IPersistentMap places) {
     String piece = (String) pieces.nth(0, null);
     if (piece == null) return null;
     Matcher m = pat.matcher(piece);

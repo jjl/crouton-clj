@@ -1,40 +1,29 @@
+[![Clojars Project](http://clojars.org/irresponsible/crouton/latest-version.svg)](http://clojars.org/irresponsible/crouton)
+
 The irresponsible clojure guild presents...
 
-# crouton - url routing to the overkill
+# crouton - path routing to the overkill
 
-A high performance URL router for the 90% case
+A simple, high performance, data-driven URL path router for the 90% case.
+
+## Requirements
+
+A Java 8 VM. 7 was EOLed ages ago.
+
+Clojure 1.8 or newer (actually only 1.7 if you don't use clojurescript)
 
 ## Why?
 
-Other libraries check some of these points, but not all:
+Some of my medium-term projects rule out other libraries for various reasons amongst these:
 
-1. Simplicity
+* Too complicated
+* Complecting routing with dispatch based on the http method
+* Not being described by edn data (and thus suitable for loading from a config file)
+* Not supporting bidirectional routing
+* Not supporting clojurescript
+* Performing poorly
 
-* Does one thing, well (path routing)
-* Works well in conjunction with something like [yada](https://github.com/juxt/yada/).
-
-2. Routes as data
-
-* Data is easy to inspect and generate
-* Data can be generated from a GUI by a non-technical user
-
-3. Bidirectional routing
-
-* No more broken internal links. Come on libraries who can't, it's 2017...
-
-4. Performance
-
-* Suitable for use under strict response SLAs. This thing is lightning fast!
-* Routes are compiled to an optimised form (hand-tuned java if you're on the JVM!)
-
-5. Reliability
-
-* Liberal in what we accept, conservative in what we produce
-* Handles even pathological inputs gracefully and quickly
-
-6. Clojurescript support
-
-* Including self-hosted cljs support (e.g. lumo, planck)
+This isn't to say that other libraries aren't good (I'm quite fond of compojure in fact).
 
 ## Example 1 Routing from clojure data
 
@@ -51,7 +40,7 @@ Other libraries check some of these points, but not all:
 ;;  * /users/irresponsible/123 ;; or various others of this form
 ;;  * /login
 ;;  * /logout
-;;  * /admin ;; also scoops up its argument
+;;  * /admin ;; also scoops up anything after, e.g. /admin/foo/bar
 (def routes
   {:/       :home
    "users"  {(c/? :name) {(c/? :id :crouton/pos-int) :user-profile}}
@@ -68,16 +57,20 @@ Other libraries check some of these points, but not all:
 ;;   * Strings match themselves against a path segment
 ;;   * A placeholder (`c/?`) is used to match a url segment and assign it a name
 ;;     * It may have an optional validator (regex, function or predefined (keyword))
+;;       * Regexes must match the entire path segment, even if you don't wrap them with ^ and $
 ;;     * For performance, we test placeholders with conditions first
 ;;   * A slurp (`:&`) will always succeed and will store any remaining segments.
 
 ;; compile it to make it fast
-(def route-fn (c/compile routes)) ; => function
+(def router (c/compile routes)) ; => function
 ;; Test it out!
 (def path "/user/irresponsible/123")
-(route-fn path) ; => {:crouton/route :user-profile :name "irresponsible" :id 123}
+(c/route router path) ; => {:crouton/route :user-profile :name "irresponsible" :id 123}
 ;; At this point, you probably want to look up :user-profile in a map of functions
 ;; or use a multimethod depending on performance requirements
+
+;; We can also go backwards
+(c/unroute router {:crouton/route :user-profile :name "irresponsible" :id 123})
 ```
 
 ## Example 2 : Loading strings
@@ -108,21 +101,73 @@ Some people prefer to see their urls as a list of strings. We support that as we
 ;; Test it out!
 (def path "/user/irresponsible/123")
 (route-fn path) ; => {:crouton/route :user-profile :name "irresponsible" :id 123}
+
 ```
 
-## Bidirectional Routing
+## Validators
 
-Coming as soon as we're satisfied with forward routing.
+Validators may be:
+* Clojure functions, which should return a (possibly coerced) value or nil if invalid
+* Regexes, which must match the entire url segment
+* Keywords naming predefined validators.
 
-The mechanism is the two-arity of compiled routes functions:
+These predefined validators are fast and tested. Use them.
 
-Instead of passing a path, you pass a name (probably keyword) and a map of parameters (may be empty)
+* `:crouton/pos-int` - a positive integer (in decimal notation). coerces to an int
 
-## Internals
+We would like to have more. Please request them via issues or contribute via PR.
+
+## Plans
+
+* More predefined validators
+* More data-driven optimisation
+* Optimised CLJS versions (benched against multiple engines!)
+* Investigate ProGuard for optimising generated jars
+
+## Hacking
+
+You need boot installed.
+
+Run clojure and clojurescript tests:
+
+```boot test```
+
+Run clojure tests:
+
+```boot clj-tests```
+
+Run clojurescript tests:
+
+```boot cljs-tests```
+
+## Caveats
+
+The clojurescript versions have not yet undergone proper optimisation.
+They should be 'fast enough' for browser usage but don't be backing a
+high-performance nodejs rest api with it yes.
+
+Reverse routing is currently only available for the clj/cljs API. If
+you wish to use it from java, you must use the clojure api through
+clojure's java api.
+
+It does say in the first example, but regexes must match the whole
+segment text. This is a deliberate choice and involves a hack on cljs.
+
+## Performance
+
+* Regexes are by a fair margin the slowest route segments in isolation
+* Lambda and clojure predicate placeholders depend on the efficiency of the lambda/predicate
+* Try to avoid many placeholders in one map - they must be tried in order and may induce backtracking
+
+You are advised to run your own benchmarks of the components with bench.clj in a cider repl
+
+## Java API
 
 The `Crouton` class is all you need to drive us from Java.
 
-There are parallel clojurescript implementations. Little time was spent optimising these so far.
+## Contributions
+
+Issues and pull requests very welcome, including for documentation.
 
 ## Copyright and License
 

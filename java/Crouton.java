@@ -2,7 +2,8 @@ package irresponsible.crouton;
 
 import clojure.lang.IFn;
 import clojure.lang.IPersistentVector;
-import clojure.lang.ITransientMap;
+import clojure.lang.IPersistentMap;
+import clojure.lang.Keyword;
 import java.util.regex.Pattern;
 import java.util.Map;
 import java.util.List;
@@ -17,11 +18,11 @@ public class Crouton {
    * An Endpoint will match when there are no more segments in the url
    * On successful match, it will return a map of all placeholders encountered
    * Plus an additional key `:crouton/route` which contains the provided `value`
-   * @param Object value - the value to assoc at `:crouton/route` on match
+   * @param Object name - the name to assoc at `:crouton/route` on match
    * @return Endpoint
    */
-  public static Endpoint endpoint(Object value) {
-    return new Endpoint(value);
+  public static Endpoint endpoint(Object name) {
+    return new Endpoint(name);
   }
   /**
    * Factory function for a Slurp
@@ -32,7 +33,7 @@ public class Crouton {
    * @param Object value - the value to assoc at `:crouton/route` on match
    * @return Slurp
    */
-  public static Slurp slurp(Object name) {
+  public static Slurp slurp(Keyword name) {
     return new Slurp(name);
   }
   /**

@@ -1,7 +1,7 @@
 package irresponsible.crouton;
 
 import clojure.lang.IPersistentVector;
-import clojure.lang.ITransientMap;
+import clojure.lang.IPersistentMap;
 import clojure.lang.RT;
 
 /**
@@ -14,8 +14,8 @@ public abstract class AInvariant implements IRoute {
       throw new IllegalArgumentException("next must not be nil");
     next = nxt;
   }
-  public abstract Object match(IPersistentVector pieces, ITransientMap places);
-  final protected Object forward(IPersistentVector pieces, ITransientMap places) {
+  public abstract Object match(IPersistentVector pieces, IPersistentMap places);
+  final protected Object forward(IPersistentVector pieces, IPersistentMap places) {
     return next.match(RT.subvec(pieces, 1, pieces.count()), places);
   }
 }

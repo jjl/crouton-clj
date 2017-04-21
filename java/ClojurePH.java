@@ -2,7 +2,7 @@ package irresponsible.crouton;
 
 import clojure.lang.IFn;
 import clojure.lang.IPersistentVector;
-import clojure.lang.ITransientMap;
+import clojure.lang.IPersistentMap;
 
 public class ClojurePH extends PH {
   private final IFn ifn;
@@ -12,7 +12,7 @@ public class ClojurePH extends PH {
       throw new IllegalArgumentException("lambda must not be nil");
     ifn = i;
   }
-  public final Object match(IPersistentVector pieces, ITransientMap places) {
+  public final Object match(IPersistentVector pieces, IPersistentMap places) {
     String piece = (String) pieces.nth(0, null);
     if (piece == null) return null;
     Object ret = ifn.invoke(piece);

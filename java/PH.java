@@ -1,7 +1,7 @@
 package irresponsible.crouton;
 
 import clojure.lang.IPersistentVector;
-import clojure.lang.ITransientMap;
+import clojure.lang.IPersistentMap;
 import clojure.lang.RT;
 
 public abstract class PH extends AInvariant {
@@ -12,7 +12,7 @@ public abstract class PH extends AInvariant {
       throw new IllegalArgumentException("name must not be nil");
     name = n;
   }
-  final protected Object forward(Object val, IPersistentVector pieces, ITransientMap places) {
+  final protected Object forward(Object val, IPersistentVector pieces, IPersistentMap places) {
     return next.match(RT.subvec(pieces, 1, pieces.count()),
 		      places.assoc(name, val));
   }
