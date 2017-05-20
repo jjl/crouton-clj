@@ -6,7 +6,8 @@
   :dependencies '[[org.clojure/clojure "1.9.0-alpha16"  :scope "provided"]
                   [org.clojure/core.match "0.3.0-alpha4"]
                   [irresponsible/spectra  "0.1.0"]
-                  [com.cognitect/transit-clj "0.8.300"          :scope "test"] ; only for benchmark comparison
+                  [io.djy/boot-kotlin          "0.2.1"          :scope "test"]
+                  [com.cognitect/transit-clj   "0.8.300"        :scope "test"] ; only for benchmark comparison
                   [org.clojure/clojurescript   "1.9.542"        :scope "test"]
                   [adzerk/boot-cljs            "1.7.228-1"      :scope "test"]
                   [criterium                   "0.4.4"          :scope "test"]
@@ -16,6 +17,7 @@
 
 (require '[adzerk.boot-cljs :refer [cljs]]
          '[adzerk.boot-test :as t]
+         '[io.djy.boot-kotlin :refer [kotlinc]]
          '[crisptrutski.boot-cljs-test :refer [test-cljs]])
 
 (task-options!
@@ -33,19 +35,19 @@
   identity)
 
 (deftask clj-tests []
-  (comp (testing) (javac) (speak) (t/test)))
+  (comp (testing) (kotlinc) (speak) (t/test)))
 
 (deftask cljs-tests []
   (comp (testing) (speak) (test-cljs)))
 
 (deftask test []
-  (comp (testing) (speak) (javac) (t/test) (test-cljs)))
+  (comp (testing) (speak) (kotlinc) (t/test) (test-cljs)))
 
 (deftask autotest []
   (comp (testing) (watch) (test)))
 
 (deftask make-jar []
-  (comp (javac) (pom) (jar)))
+  (comp (kotlinc) (pom) (jar)))
 
 (deftask travis []
   (testing)
