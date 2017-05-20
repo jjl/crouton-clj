@@ -2,7 +2,7 @@
   (:require [clojure.string :as str]
             [clojure.set :as set]
             [irresponsible.spectra :as ss]
-            [#?(:clj clojure.spec :cljs cljs.spec) :as s]
+            [#?(:clj clojure.spec.alpha :cljs cljs.spec.alpha) :as s]
    #?(:clj  [clojure.core.match :refer [match]]
       :cljs [cljs.core.match :refer-macros [match]]))
 #?(:clj (:import [java.util.regex Pattern]

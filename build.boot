@@ -3,10 +3,11 @@
   :version "0.1.0"
   :resource-paths #{"src"}
   :source-paths #{"src" "java"}
-  :dependencies '[[org.clojure/clojure "1.9.0-alpha15"  :scope "provided"]
+  :dependencies '[[org.clojure/clojure "1.9.0-alpha16"  :scope "provided"]
                   [org.clojure/core.match "0.3.0-alpha4"]
                   [irresponsible/spectra  "0.1.0"]
-                  [org.clojure/clojurescript   "1.9.456"        :scope "test"]
+                  [com.cognitect/transit-clj "0.8.300"          :scope "test"] ; only for benchmark comparison
+                  [org.clojure/clojurescript   "1.9.542"        :scope "test"]
                   [adzerk/boot-cljs            "1.7.228-1"      :scope "test"]
                   [criterium                   "0.4.4"          :scope "test"]
                   [irresponsible/gadget        "0.2.0"          :scope "test"]
