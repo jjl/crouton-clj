@@ -11,11 +11,11 @@
 
 (defn quick []
   (let [path "//////foo///////bar///////baz-123///////"
-        ^Endpoint e (Crouton/endpoint ::test)
-        ^RegexPH reg (Crouton/regex ::regex #"foo" e)
-        ^Placeholder pl (Crouton/placeholder ::place e)
-        ^RouteMap rm (Crouton/routemap (doto (HashMap.) (.put "test" e)))
-        ^Slurp s (Crouton/slurp ::test)]
+        ^Endpoint e (.endpoint Crouton/INSTANCE ::test)
+        ^RegexPH reg (.regex Crouton/INSTANCE ::regex #"foo" e)
+        ^Placeholder pl (.placeholder Crouton/INSTANCE ::place e)
+        ^RouteMap rm (.routemap Crouton/INSTANCE (doto (HashMap.) (.put "test" e)))
+        ^Slurp s (.slurp Crouton/INSTANCE ::test)]
     {:parse    (quick-benchmark (c/parse-path path) {})
      :endpoint (quick-benchmark (.match e [] {}) {})
      :routemap (quick-benchmark (.match rm ["test"] {}) {})
@@ -25,11 +25,11 @@
 
 (defn slow []
   (let [path "//////foo///////bar///////baz-123///////"
-        ^Endpoint e (Crouton/endpoint ::test)
-        ^RegexPH reg (Crouton/regex ::regex #"foo" e)
-        ^Placeholder pl (Crouton/placeholder ::place e)
-        ^RouteMap rm (Crouton/routemap (doto (HashMap.) (.put "test" e)))
-        ^Slurp s (Crouton/slurp ::test)]
+        ^Endpoint e (.endpoint Crouton/INSTANCE ::test)
+        ^RegexPH reg (.regex Crouton/INSTANCE ::regex #"foo" e)
+        ^Placeholder pl (.placeholder Crouton/INSTANCE ::place e)
+        ^RouteMap rm (.routemap Crouton/INSTANCE (doto (HashMap.) (.put "test" e)))
+        ^Slurp s (.slurp Crouton/INSTANCE ::test)]
     {:parse    (benchmark (c/parse-path path) {})
      :endpoint (benchmark (.match e [] {}) {})
      :routemap (benchmark (.match rm ["test"] {}) {})
@@ -47,7 +47,16 @@
         r (tr/reader in :json)]
     (tr/read r)))
 
-(def rs (slow))
+;; (def rs (slow))
+(def java (load "java-bench.json"))
+(def kotlin rs)
 
-(save rs "java-bench.json")
+(keys (:place java))
+(doseq [k (keys kotlin)
+        [name items] [[:java java]
+                      [:kotlin kotlin]]]
+  (prn name k)
+  (report-result (items k)))
+        
+;(save rs "java-bench.json")
 

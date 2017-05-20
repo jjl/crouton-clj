@@ -1,5 +1,5 @@
 package irresponsible.crouton
 
 interface Predicate {
-    fun test(s: String): Any
+    fun test(s: String): Any?
 }

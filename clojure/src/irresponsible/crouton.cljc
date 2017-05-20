@@ -122,7 +122,7 @@
    args: [path] ; string
    returns: vector of strings"
   [path]
-  #?(:clj  (Crouton/parse_path ^String path)
+  #?(:clj  (.parse_path Crouton/INSTANCE ^String path)
      :cljs (into [] (filter #(not= "" %) (str/split path #"/+")))))
 
 #?
@@ -140,7 +140,7 @@
      next: IRoute
    returns: Placeholder"
   [name next]
-  #?(:clj  (Crouton/placeholder name next)
+  #?(:clj  (.placeholder Crouton/INSTANCE name next)
      :cljs (->Placeholder
             (ss/assert! ::name name)
             (ss/assert! ::iroute next))))
@@ -179,7 +179,7 @@
      next: IRoute
    returns: Placeholder"
  [name regex next]
-  #?(:clj  (Crouton/regex name regex next)
+  #?(:clj  (.regex Crouton/INSTANCE name regex next)
      :cljs (->RegexPH
             (ss/assert! ::name name)
             (->> regex (ss/assert! ::regex) anchor-regex)
@@ -204,7 +204,7 @@
      next: IRoute
    returns: Placeholder"
   [name ifn next]
-  #?(:clj  (Crouton/clojure name ifn next)
+  #?(:clj  (.clojure Crouton/INSTANCE name ifn next)
      :cljs (->ClojurePH
             (ss/assert! ::name name)
             (ss/assert! ::fn ifn)
@@ -225,7 +225,7 @@
      name: string or keyword naming the route
    returns: Endpoint"
   [name]
-  #?(:clj  (Crouton/endpoint name)
+  #?(:clj  (.endpoint Crouton/INSTANCE name)
      :cljs (->Endpoint (ss/assert! ::name name))))
 
 #?
@@ -243,7 +243,7 @@
    args: [first second] ; both IRoute
      name: string or keyword naming the route
    returns: Fallback"
-  #?(:clj  (Crouton/fallback fst snd)
+  #?(:clj  (.fallback Crouton/INSTANCE fst snd)
      :cljs (->Fallback
             (ss/assert! ::iroute fst)
             (ss/assert! ::iroute snd))))
@@ -266,7 +266,7 @@
    args: [choices] ; seq of IRoute
    returns: Choice"
   [items]
-#?(:clj  (Crouton/choice items)
+#?(:clj  (.choice Crouton/INSTANCE items)
    :cljs (->Choice (ss/assert! ::iroutes+ items))))
 
 #?
@@ -283,7 +283,7 @@
    args: [name] ; string or keyword
    returns: Slurp"
   [name]
-#?(:clj  (Crouton/slurp name)
+#?(:clj  (.slurp Crouton/INSTANCE name)
    :cljs (->Slurp (ss/assert! ::name name))))
 
 #?
@@ -303,7 +303,7 @@
    args: [items] ; map of string -> IRoute
    returns: RouteMap"
   [items]
-  #?(:clj  (Crouton/routemap items)
+  #?(:clj  (.routemap Crouton/INSTANCE items)
      :cljs (->RouteMap (ss/assert! ::routes-map items))))
 
 (declare compile-route rev-compile-route)
@@ -391,7 +391,7 @@
    returns: IRoute"
   [name validator next]
   (if-let [v (*validators* validator)]
-    (#?(:clj Crouton/lambda :cljs make-clojure) name v next)
+    (#?@(:clj [.lambda Crouton/INSTANCE] :cljs [make-clojure]) name v next)
     (->> {:got validator :valid (set (keys *validators*))}
          (ex-info "Unknown predefined validator")
          throw)))
