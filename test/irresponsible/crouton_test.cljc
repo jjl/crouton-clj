@@ -159,10 +159,10 @@
              (try (c/make-regex nil #"" test)
                   (catch #?(:clj Exception :cljs :default) e ::throw))))
       (is (= ::throw
-             (try (c/make-clojure :foo nil test)
+             (try (c/make-regex :foo nil test)
                   (catch #?(:clj Exception :cljs :default) e ::throw))))
       (is (= ::throw
-             (try (c/make-clojure :foo #"" nil)
+             (try (c/make-regex :foo #"" nil)
                   (catch #?(:clj Exception :cljs :default) e ::throw)))))
     (let [p (c/make-regex :foo #"foo" test)]
       (testing :success

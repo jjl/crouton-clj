@@ -78,18 +78,24 @@
   #?(:clj  (instance?  IRoute v)
      :cljs (satisfies? IRoute v)))
 
-(defprotocol PrintSegment
-  (print-segment [self places]
-    "Print the given url segment
-     args: [segment places]
-       places: map of keyword placeholder values
-     returns: string"))
-
-(extend-protocol PrintSegment
-  #?(:clj String :cljs js/String)
-  (print-segment [self _] self)
-  Keyword
-  (print-segment [self places] (places self)))
+#?
+(:clj
+ (do (defprotocol PrintSegment
+       (print-segment [self places]
+         "Print the given url segment
+          args: [segment places]
+          places: map of keyword placeholder values
+          returns: string"))
+     (extend-protocol PrintSegment
+       String
+       (print-segment [self _] self)
+       Keyword
+       (print-segment [self places] (places self))))
+ :cljs
+ (defn print-segment [s places]
+   (cond (string? s)  s
+         (keyword? s) (places s)
+         :else (throw (ex-info "Unrecognised print segment (expected string or keyword" {:got s})))))
 
 (defn- print-route
   "Prints segments seperated by / with an additional / at the start
@@ -100,7 +106,6 @@
     "/"
     (str/join "/" (cons "" pieces))))
 
-
 (s/def ::iroute iroute?)
 (s/def ::iroutes  (s/coll-of iroute? :into []))
 (s/def ::iroutes+ (s/coll-of iroute? :min-count 1 :into []))
@@ -109,7 +114,7 @@
 (s/def ::precanned #{:crouton/pos-int
                      ::pos-int})
 (s/def ::regex regex?)
-(s/def ::fn (and ifn? (complement keyword?)))
+(s/def ::fn (s/and ifn? (complement keyword?)))
 (s/def ::validator (ss/some-spec ::precanned ::regex ::fn))
 
 (defn parse-path
